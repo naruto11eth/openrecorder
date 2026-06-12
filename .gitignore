@@ -1,0 +1,23 @@
+# SwiftPM build artifacts
+.build/
+.swiftpm/
+*.xcodeproj
+
+# Built app bundle (regenerate with ./make-app.sh)
+OpenRecorder.app/
+
+# macOS
+.DS_Store
+
+# Local recordings / runtime output
+/tmp/openrecorder.log
+Recordings/
+*.mov
+*.wav
+
+# Signing material (never commit private keys)
+*.p12
+*.pem
+
+# Claude Code local settings
+.claude/settings.local.json
