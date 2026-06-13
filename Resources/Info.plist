@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>dev.naruto11eth.openrecorder</string>
+    <key>CFBundleName</key>
+    <string>OpenRecorder</string>
+    <key>CFBundleDisplayName</key>
+    <string>OpenRecorder</string>
+    <key>CFBundleExecutable</key>
+    <string>OpenRecorder</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>15.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>OpenRecorder records your side of meetings so it can transcribe them locally.</string>
+    <key>NSAudioCaptureUsageDescription</key>
+    <string>OpenRecorder captures meeting audio from the call app to transcribe all participants locally.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>OpenRecorder records the meeting window so you have a visual record of shared screens.</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>© 2026 naruto11eth. MIT License.</string>
+</dict>
+</plist>
