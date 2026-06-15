@@ -28,8 +28,7 @@ enum VerificationPass {
             let results = try await whisper.transcribe(audioPath: url.path)
             for result in results {
                 for segment in result.segments {
-                    let text = TranscriptionEngine.cleanText(segment.text)
-                    guard !text.isEmpty else { continue }
+                    guard let text = TranscriptionEngine.meaningfulText(segment.text) else { continue }
                     offlineSegments.append(TranscriptSegment(
                         start: Double(segment.start),
                         end: Double(segment.end),

@@ -34,12 +34,18 @@ actor TranscriptionEngine {
         guard hasSpeechEnergy(samples) else { return }
 
         do {
-            let results = try await whisper.transcribe(audioArray: samples)
+            let options = DecodingOptions(
+                temperature: 0.0,
+                suppressBlank: true,
+                compressionRatioThreshold: 2.0,
+                logProbThreshold: -1.0,
+                noSpeechThreshold: 0.6
+            )
+            let results = try await whisper.transcribe(audioArray: samples, decodeOptions: options)
             var fresh: [TranscriptSegment] = []
             for result in results {
                 for segment in result.segments {
-                    let text = Self.cleanText(segment.text)
-                    guard !text.isEmpty else { continue }
+                    guard let text = Self.meaningfulText(segment.text) else { continue }
                     fresh.append(TranscriptSegment(
                         start: startOffset + Double(segment.start),
                         end: startOffset + Double(segment.end),
@@ -56,19 +62,34 @@ actor TranscriptionEngine {
         }
     }
 
-    private func hasSpeechEnergy(_ samples: [Float], threshold: Float = 0.005) -> Bool {
+    private func hasSpeechEnergy(_ samples: [Float], threshold: Float = 0.01) -> Bool {
         guard !samples.isEmpty else { return false }
         let sumSquares = samples.reduce(Float(0)) { $0 + $1 * $1 }
         let rms = (sumSquares / Float(samples.count)).squareRoot()
         return rms > threshold
     }
 
-    /// Strip Whisper special tokens like <|startoftranscript|> and trim.
-    static func cleanText(_ raw: String) -> String {
+    /// Returns readable speech text, or nil if the segment is pure non-speech.
+    /// Whisper wraps ambient sound in brackets/parens ("[BLANK_AUDIO]",
+    /// "(wind blowing)", "(crowd murmuring)"); a segment whose entire content
+    /// is such an annotation is noise and gets dropped.
+    static func meaningfulText(_ raw: String) -> String? {
         var text = raw
-        while let open = text.range(of: "<|"), let close = text.range(of: "|>", range: open.upperBound..<text.endIndex) {
+        // Strip Whisper special tokens like <|startoftranscript|>.
+        while let open = text.range(of: "<|"),
+              let close = text.range(of: "|>", range: open.upperBound..<text.endIndex) {
             text.removeSubrange(open.lowerBound..<close.upperBound)
         }
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+
+        // Remove bracketed/parenthesized spans + stray brackets; if nothing
+        // real remains, the segment was a non-speech annotation.
+        var stripped = text
+        for pattern in ["\\[[^\\]]*\\]", "\\([^\\)]*\\)", "[\\[\\]()]"] {
+            stripped = stripped.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+        }
+        stripped = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
+        return stripped.isEmpty ? nil : text
     }
 }
