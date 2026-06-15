@@ -9,6 +9,13 @@ model and reports where the live transcript was wrong.
 Everything stays on your machine. No bots join your calls, no audio leaves
 your laptop.
 
+> **Status (2026-06-15):** capture, meeting detection, window video, and live
+> transcription are verified on real Google Meet calls. The post-meeting
+> verification pass is implemented but not yet exercised end-to-end on hardware.
+> See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full state, known bugs, and
+> next steps; [`docs/PLAN.md`](docs/PLAN.md) for the roadmap; and
+> [`docs/RESEARCH.md`](docs/RESEARCH.md) for the prior-art decisions.
+
 ## How it works
 
 ```
