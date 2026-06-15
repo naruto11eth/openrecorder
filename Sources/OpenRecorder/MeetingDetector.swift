@@ -71,6 +71,7 @@ final class MeetingDetector {
             onMeetingStarted?(meeting)
         case (.some(let active), nil):
             missCount += 1
+            Log.info("Meeting window gone (\(missCount)/\(missThreshold)) — will stop if it stays gone")
             if missCount >= missThreshold {
                 current = nil
                 missCount = 0
@@ -95,8 +96,6 @@ final class MeetingDetector {
             [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
         ) as? [[String: Any]] else { return nil }
 
-        var slackFallbackCandidate: DetectedMeeting?
-
         for info in windowInfo {
             guard let pid = info[kCGWindowOwnerPID as String] as? pid_t,
                   let windowID = info[kCGWindowNumber as String] as? CGWindowID,
@@ -106,28 +105,19 @@ final class MeetingDetector {
 
             let title = info[kCGWindowName as String] as? String
 
-            if let slack, slack.processIdentifier == pid {
-                if let title, Self.huddleTitleKeywords.contains(where: { title.contains($0) }) {
-                    return DetectedMeeting(
-                        source: .slackHuddle,
-                        ownerPID: pid,
-                        ownerBundleID: Self.slackBundleID,
-                        windowID: windowID,
-                        windowTitle: title
-                    )
-                }
-                // Huddle window visibility is inconsistent across Slack versions.
-                // If Slack has a window AND the mic is live, treat it as a huddle
-                // candidate — only used if no Meet window matches.
-                if slackFallbackCandidate == nil, Self.isDefaultInputDeviceActive() {
-                    slackFallbackCandidate = DetectedMeeting(
-                        source: .slackHuddle,
-                        ownerPID: pid,
-                        ownerBundleID: Self.slackBundleID,
-                        windowID: windowID,
-                        windowTitle: title
-                    )
-                }
+            // Slack: require a real "Huddle" window title. We deliberately do
+            // NOT use mic-in-use as a fallback — during recording OpenRecorder
+            // holds the mic open, which would self-trigger a phantom huddle and
+            // prevent the meeting from ever being detected as ended.
+            if let slack, slack.processIdentifier == pid,
+               let title, Self.huddleTitleKeywords.contains(where: { title.contains($0) }) {
+                return DetectedMeeting(
+                    source: .slackHuddle,
+                    ownerPID: pid,
+                    ownerBundleID: Self.slackBundleID,
+                    windowID: windowID,
+                    windowTitle: title
+                )
             }
 
             if let browser = browsers.first(where: { $0.processIdentifier == pid }),
@@ -144,7 +134,7 @@ final class MeetingDetector {
             }
         }
 
-        return slackFallbackCandidate
+        return nil
     }
 
     /// CoreAudio: is the default input device running somewhere (any process)?
